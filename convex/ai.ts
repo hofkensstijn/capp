@@ -32,7 +32,7 @@ export const extractRecipeFromImage = action({
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 2000,
           messages: [
             {
@@ -120,7 +120,7 @@ export const getSuggestedRecipes = action({
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 2000,
           messages: [
             {

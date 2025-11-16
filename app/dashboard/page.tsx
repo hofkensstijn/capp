@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useStoreUser } from "@/lib/hooks/useStoreUser";
+import { usePostHogIdentify } from "@/providers/PostHogProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, BookOpen, ShoppingCart, Sparkles } from "lucide-react";
@@ -10,6 +11,7 @@ import Link from "next/link";
 
 export default function DashboardPage() {
   const { user } = useStoreUser();
+  usePostHogIdentify(); // Identify user in PostHog
   const currentUser = useQuery(
     api.users.getCurrentUser,
     user?.id ? { clerkId: user.id } : "skip"

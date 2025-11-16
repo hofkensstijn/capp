@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { ChefHat, Home, Package, BookOpen, ShoppingCart, Sparkles } from "lucide-react";
+import { ChefHat, Home, Package, BookOpen, ShoppingCart, Sparkles, Search } from "lucide-react";
 
 const routes = [
   {
@@ -21,6 +21,11 @@ const routes = [
     label: "Recipes",
     icon: BookOpen,
     href: "/recipes",
+  },
+  {
+    label: "Search",
+    icon: Search,
+    href: "/search",
   },
   {
     label: "Suggestions",

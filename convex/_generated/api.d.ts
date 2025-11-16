@@ -9,6 +9,7 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as aiSearch from "../aiSearch.js";
 import type * as ingredients from "../ingredients.js";
 import type * as pantry from "../pantry.js";
 import type * as recipeScraper from "../recipeScraper.js";
@@ -24,6 +25,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  aiSearch: typeof aiSearch;
   ingredients: typeof ingredients;
   pantry: typeof pantry;
   recipeScraper: typeof recipeScraper;
