@@ -69,8 +69,9 @@ export function PantryItemCard({ item }: PantryItemCardProps) {
         </Button>
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="text-2xl font-bold">
-          {item.quantity} {item.unit}
+        <div className="flex flex-col space-y-1">
+          <span className="text-sm text-muted-foreground">Quantity: {item.quantity}</span>
+          <span className="text-sm text-muted-foreground">Amount: {item.unit}</span>
         </div>
 
         {item.location && (

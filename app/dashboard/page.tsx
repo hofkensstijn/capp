@@ -1,7 +1,36 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useStoreUser } from "@/lib/hooks/useStoreUser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Package, BookOpen, ShoppingCart, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardPage() {
+  const { user } = useStoreUser();
+  const currentUser = useQuery(
+    api.users.getCurrentUser,
+    user?.id ? { clerkId: user.id } : "skip"
+  );
+  const pantryItems = useQuery(
+    api.pantry.list,
+    currentUser?._id ? { userId: currentUser._id } : "skip"
+  );
+  const recipes = useQuery(
+    api.recipes.list,
+    currentUser?._id ? { userId: currentUser._id } : "skip"
+  );
+  const recipesYouCanMake = useQuery(
+    api.recipes.getRecipesYouCanMake,
+    currentUser?._id ? { userId: currentUser._id } : "skip"
+  );
+
+  const pantryCount = pantryItems?.length || 0;
+  const recipesCount = recipes?.length || 0;
+  const canMakeCount = recipesYouCanMake?.length || 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,7 +47,7 @@ export default function DashboardPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{pantryCount}</div>
             <p className="text-xs text-muted-foreground">
               Items in your pantry
             </p>
@@ -30,7 +59,7 @@ export default function DashboardPage() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{recipesCount}</div>
             <p className="text-xs text-muted-foreground">
               Recipes in your collection
             </p>
@@ -48,13 +77,13 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-primary/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Recipes You Can Make</CardTitle>
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <Sparkles className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold text-primary">{canMakeCount}</div>
             <p className="text-xs text-muted-foreground">
               Based on your pantry
             </p>
