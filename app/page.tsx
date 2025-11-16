@@ -1,65 +1,113 @@
-import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { ChefHat, Package, BookOpen, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth();
+
+  // Redirect authenticated users to dashboard
+  if (userId) {
+    redirect("/dashboard");
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex min-h-screen flex-col">
+      <header className="border-b">
+        <div className="container mx-auto flex h-16 items-center px-4">
+          <div className="flex items-center gap-2 font-bold text-xl">
+            <ChefHat className="h-6 w-6" />
+            <span>Capp</span>
+          </div>
+          <div className="ml-auto flex gap-2">
+            <Button variant="ghost" asChild>
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/sign-up">Get Started</Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </header>
+
+      <main className="flex-1">
+        <section className="container mx-auto px-4 py-24 text-center">
+          <div className="mx-auto max-w-3xl space-y-6">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+              Your Smart Cooking Assistant
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Manage your pantry, discover recipes, and never waste food again.
+              Powered by AI to help you make the most of what you have.
+            </p>
+            <div className="flex justify-center gap-4 pt-4">
+              <Button size="lg" asChild>
+                <Link href="/sign-up">Start Cooking Smarter</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/sign-in">Sign In</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t bg-muted/50 py-24">
+          <div className="container mx-auto px-4">
+            <h2 className="text-center text-3xl font-bold tracking-tight mb-12">
+              Everything you need to cook smarter
+            </h2>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="rounded-full bg-primary/10 p-4">
+                  <Package className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-xl">Pantry Tracking</h3>
+                <p className="text-muted-foreground">
+                  Keep track of what you have at home, including quantities and
+                  expiration dates.
+                </p>
+              </div>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="rounded-full bg-primary/10 p-4">
+                  <BookOpen className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-xl">Recipe Management</h3>
+                <p className="text-muted-foreground">
+                  Upload recipe photos and let AI extract all the details for
+                  you.
+                </p>
+              </div>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="rounded-full bg-primary/10 p-4">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-xl">Smart Suggestions</h3>
+                <p className="text-muted-foreground">
+                  Get AI-powered recipe suggestions based on what you already
+                  have.
+                </p>
+              </div>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="rounded-full bg-primary/10 p-4">
+                  <ChefHat className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-xl">Shopping Lists</h3>
+                <p className="text-muted-foreground">
+                  Automatically generate shopping lists based on recipes you want
+                  to make.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="border-t py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          Built with Next.js, Convex, and Clerk
+        </div>
+      </footer>
     </div>
   );
 }
