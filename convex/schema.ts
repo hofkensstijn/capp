@@ -2,13 +2,30 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // Households - groups of users sharing pantry, shopping list, recipes
+  households: defineTable({
+    name: v.string(),
+    inviteCode: v.string(), // Unique 8-char code for joining
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_invite_code", ["inviteCode"]),
+
   // User profiles and preferences
   users: defineTable({
     clerkId: v.string(),
     email: v.string(),
     name: v.optional(v.string()),
+    householdId: v.optional(v.id("households")), // Which household the user belongs to
+    preferences: v.optional(
+      v.object({
+        autoAddItems: v.boolean(), // true = skip preview and auto-add, false = show preview
+      })
+    ),
     createdAt: v.number(),
-  }).index("by_clerk_id", ["clerkId"]),
+  })
+    .index("by_clerk_id", ["clerkId"])
+    .index("by_household", ["householdId"]),
 
   // Master ingredient catalog
   ingredients: defineTable({
@@ -18,25 +35,27 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_category", ["category"]),
 
-  // User's pantry inventory
+  // Household's pantry inventory (changed from userId to householdId)
   pantryItems: defineTable({
-    userId: v.id("users"),
+    householdId: v.optional(v.id("households")), // Optional during migration
+    userId: v.optional(v.id("users")), // Legacy field, will be removed after migration
     ingredientId: v.id("ingredients"),
     quantity: v.number(),
     unit: v.string(),
     expirationDate: v.optional(v.number()),
     location: v.optional(v.string()), // e.g., "fridge", "pantry", "freezer"
     notes: v.optional(v.string()),
+    addedBy: v.optional(v.id("users")), // Track who added it
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user", ["userId"])
+    .index("by_household", ["householdId"])
     .index("by_ingredient", ["ingredientId"])
-    .index("by_user_and_ingredient", ["userId", "ingredientId"]),
+    .index("by_household_and_ingredient", ["householdId", "ingredientId"]),
 
-  // Recipes
+  // Recipes (changed from userId to householdId)
   recipes: defineTable({
-    userId: v.optional(v.id("users")), // null for public/system recipes
+    householdId: v.optional(v.id("households")), // null for public/system recipes
     title: v.string(),
     description: v.optional(v.string()),
     instructions: v.array(v.string()), // Step-by-step instructions
@@ -48,10 +67,11 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     imageStorageId: v.optional(v.id("_storage")),
     isPublic: v.boolean(),
+    addedBy: v.optional(v.id("users")), // Track who added it
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user", ["userId"])
+    .index("by_household", ["householdId"])
     .index("by_public", ["isPublic"]),
 
   // Recipe ingredients (junction table)
@@ -65,16 +85,17 @@ export default defineSchema({
     .index("by_recipe", ["recipeId"])
     .index("by_ingredient", ["ingredientId"]),
 
-  // Shopping lists
+  // Shopping lists (changed from userId to householdId)
   shoppingLists: defineTable({
-    userId: v.id("users"),
+    householdId: v.optional(v.id("households")), // Optional during migration
+    userId: v.optional(v.id("users")), // Legacy field, will be removed after migration
     name: v.string(),
     isActive: v.boolean(), // Only one active list at a time
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user", ["userId"])
-    .index("by_user_and_active", ["userId", "isActive"]),
+    .index("by_household", ["householdId"])
+    .index("by_household_and_active", ["householdId", "isActive"]),
 
   // Shopping list items
   shoppingListItems: defineTable({
@@ -84,6 +105,7 @@ export default defineSchema({
     unit: v.string(),
     isPurchased: v.boolean(),
     notes: v.optional(v.string()),
+    addedBy: v.optional(v.id("users")), // Track who added it
     createdAt: v.number(),
     updatedAt: v.number(),
   })

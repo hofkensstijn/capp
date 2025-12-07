@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">capp</string>
+    <string name="title_activity_main">capp</string>
+    <string name="package_name">com.capp.app</string>
+    <string name="custom_url_scheme">com.capp.app</string>
+</resources>

@@ -53,10 +53,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface AddPantryItemDialogProps {
+  householdId: Id<"households">;
   userId: Id<"users">;
 }
 
-export function AddPantryItemDialog({ userId }: AddPantryItemDialogProps) {
+export function AddPantryItemDialog({ householdId, userId }: AddPantryItemDialogProps) {
   const [open, setOpen] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const ingredients = useQuery(api.ingredients.list);
@@ -91,7 +92,7 @@ export function AddPantryItemDialog({ userId }: AddPantryItemDialogProps) {
       }
 
       await addPantryItem({
-        userId,
+        householdId,
         ingredientId,
         quantity: values.quantity,
         unit: values.unit,
@@ -100,6 +101,7 @@ export function AddPantryItemDialog({ userId }: AddPantryItemDialogProps) {
           : undefined,
         location: values.location || undefined,
         notes: values.notes || undefined,
+        addedBy: userId,
       });
       form.reset();
       setIsCreatingNew(false);

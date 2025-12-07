@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useStoreUser } from "@/lib/hooks/useStoreUser";
+import { useHousehold } from "@/lib/hooks/useHousehold";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,14 @@ export default function SuggestionsPage() {
     api.users.getCurrentUser,
     user?.id ? { clerkId: user.id } : "skip"
   );
+  const { householdId, isLoading: householdLoading } = useHousehold(currentUser?._id);
   const recipesYouCanMake = useQuery(
     api.recipes.getRecipesYouCanMake,
-    currentUser?._id ? { userId: currentUser._id } : "skip"
+    householdId ? { householdId } : "skip"
   );
   const pantryItems = useQuery(
     api.pantry.list,
-    currentUser?._id ? { userId: currentUser._id } : "skip"
+    householdId ? { householdId } : "skip"
   );
 
   if (!user) {

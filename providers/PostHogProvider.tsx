@@ -2,7 +2,7 @@
 
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -38,7 +38,7 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
     if (apiKey && !isInitialized) {
       console.log("Initializing PostHog...");
       posthog.init(apiKey, {
-        api_host: "/api/ingest", // Use local proxy to bypass ad blockers
+        api_host: host, // Use direct host for static export compatibility
         ui_host: host, // Keep the actual PostHog host for the UI
         person_profiles: "identified_only",
         autocapture: false, // Disable autocapture
@@ -56,7 +56,9 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PostHogProvider client={posthog}>
-      <PostHogPageView />
+      <Suspense fallback={null}>
+        <PostHogPageView />
+      </Suspense>
       {children}
     </PostHogProvider>
   );

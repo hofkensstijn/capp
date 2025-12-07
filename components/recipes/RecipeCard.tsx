@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,23 +20,27 @@ interface Recipe {
   cuisine?: string;
   imageUrl?: string;
   isPublic: boolean;
-  userId?: Id<"users">;
+  householdId?: Id<"households">;
+  addedBy?: Id<"users">;
 }
 
 interface RecipeCardProps {
   recipe: Recipe;
+  householdId?: Id<"households">;
   currentUserId?: Id<"users">;
   onDelete?: () => void;
 }
 
 export function RecipeCard({
   recipe,
+  householdId,
   currentUserId,
   onDelete,
 }: RecipeCardProps) {
   const removeRecipe = useMutation(api.recipes.remove);
 
-  const canDelete = recipe.userId === currentUserId;
+  // User can delete if they added it or if it belongs to their household
+  const canDelete = recipe.addedBy === currentUserId || recipe.householdId === householdId;
 
   const handleDelete = async () => {
     if (!canDelete) return;
@@ -50,32 +55,36 @@ export function RecipeCard({
     (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      {recipe.imageUrl && (
-        <div className="aspect-video bg-muted relative overflow-hidden">
-          <img
-            src={recipe.imageUrl}
-            alt={recipe.title}
-            className="object-cover w-full h-full"
-          />
-        </div>
-      )}
-      <CardHeader className="space-y-2">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-xl line-clamp-1">
-            {recipe.title}
-          </CardTitle>
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              className="text-destructive hover:text-destructive flex-shrink-0"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+    <Link href={`/recipes/${recipe._id}`}>
+      <Card className="overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer group hover:border-primary/30">
+        {recipe.imageUrl && (
+          <div className="aspect-video bg-muted relative overflow-hidden">
+            <img
+              src={recipe.imageUrl}
+              alt={recipe.title}
+              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        )}
+        <CardHeader className="space-y-2">
+          <div className="flex items-start justify-between">
+            <CardTitle className="text-xl line-clamp-1">
+              {recipe.title}
+            </CardTitle>
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                }}
+                className="text-destructive hover:text-destructive flex-shrink-0"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         {recipe.description && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {recipe.description}
@@ -111,5 +120,6 @@ export function RecipeCard({
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }

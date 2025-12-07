@@ -16,11 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Upload, Loader2, Camera } from "lucide-react";
 
 interface UploadRecipeDialogProps {
+  householdId: Id<"households">;
   userId: Id<"users">;
   onRecipeCreated?: () => void;
 }
 
 export function UploadRecipeDialog({
+  householdId,
   userId,
   onRecipeCreated,
 }: UploadRecipeDialogProps) {
@@ -75,7 +77,8 @@ export function UploadRecipeDialog({
 
       // Step 3: Create recipe in database
       const recipeId = await createRecipe({
-        userId,
+        householdId,
+        addedBy: userId,
         title: extractedRecipe.title,
         description: extractedRecipe.description,
         instructions: extractedRecipe.instructions,

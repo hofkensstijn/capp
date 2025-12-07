@@ -5,7 +5,7 @@ import { api } from "./_generated/api";
 // AI-powered recipe search based on pantry items
 export const searchRecipesWithAI = action({
   args: {
-    userId: v.id("users"),
+    householdId: v.id("households"),
     searchQuery: v.string(),
   },
   handler: async (ctx, args) => {
@@ -15,9 +15,9 @@ export const searchRecipesWithAI = action({
       throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
-    // Get user's pantry items
+    // Get household's pantry items
     const pantryItems = await ctx.runQuery(api.pantry.list, {
-      userId: args.userId,
+      householdId: args.householdId,
     });
 
     // Extract ingredient names

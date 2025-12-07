@@ -1,22 +1,22 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-// Get all recipes for a user (includes public recipes)
+// Get all recipes for a household (includes public recipes)
 export const list = query({
-  args: { userId: v.optional(v.id("users")) },
+  args: { householdId: v.optional(v.id("households")) },
   handler: async (ctx, args) => {
-    if (!args.userId) {
-      // Return only public recipes if no user specified
+    if (!args.householdId) {
+      // Return only public recipes if no household specified
       return await ctx.db
         .query("recipes")
         .withIndex("by_public", (q) => q.eq("isPublic", true))
         .collect();
     }
 
-    // Get user's private recipes and public recipes
-    const userRecipes = await ctx.db
+    // Get household's private recipes and public recipes
+    const householdRecipes = await ctx.db
       .query("recipes")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_household", (q) => q.eq("householdId", args.householdId))
       .collect();
 
     const publicRecipes = await ctx.db
@@ -25,7 +25,7 @@ export const list = query({
       .collect();
 
     // Combine and deduplicate
-    const allRecipes = [...userRecipes, ...publicRecipes];
+    const allRecipes = [...householdRecipes, ...publicRecipes];
     const uniqueRecipes = Array.from(
       new Map(allRecipes.map((recipe) => [recipe._id, recipe])).values()
     );
@@ -68,7 +68,8 @@ export const get = query({
 // Create a new recipe
 export const create = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    householdId: v.optional(v.id("households")),
+    addedBy: v.optional(v.id("users")),
     title: v.string(),
     description: v.optional(v.string()),
     instructions: v.array(v.string()),
@@ -84,7 +85,8 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     return await ctx.db.insert("recipes", {
-      userId: args.userId,
+      householdId: args.householdId,
+      addedBy: args.addedBy,
       title: args.title,
       description: args.description,
       instructions: args.instructions,
@@ -141,25 +143,39 @@ export const remove = mutation({
   },
 });
 
-// Get recipes user can make with current pantry
+// Get recipes household can make with current pantry
 export const getRecipesYouCanMake = query({
-  args: { userId: v.id("users") },
+  args: { householdId: v.id("households") },
   handler: async (ctx, args) => {
-    // Get user's pantry items
+    // Get household's pantry items
     const pantryItems = await ctx.db
       .query("pantryItems")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_household", (q) => q.eq("householdId", args.householdId))
       .collect();
 
-    const availableIngredientIds = new Set(
-      pantryItems.map((item) => item.ingredientId)
+    // Create a map of ingredient ID to pantry quantity
+    const pantryMap = new Map(
+      pantryItems.map((item) => [item.ingredientId.toString(), item.quantity])
     );
 
-    // Get all recipes
-    const recipes = await ctx.db.query("recipes").collect();
+    // Get all recipes (household's + public)
+    const householdRecipes = await ctx.db
+      .query("recipes")
+      .withIndex("by_household", (q) => q.eq("householdId", args.householdId))
+      .collect();
 
-    // Filter recipes that can be made
-    const recipesYouCanMake = [];
+    const publicRecipes = await ctx.db
+      .query("recipes")
+      .withIndex("by_public", (q) => q.eq("isPublic", true))
+      .collect();
+
+    const allRecipes = [...householdRecipes, ...publicRecipes];
+    const recipes = Array.from(
+      new Map(allRecipes.map((recipe) => [recipe._id, recipe])).values()
+    );
+
+    // Filter recipes with detailed availability info
+    const recipesWithAvailability = [];
 
     for (const recipe of recipes) {
       const recipeIngredients = await ctx.db
@@ -167,17 +183,133 @@ export const getRecipesYouCanMake = query({
         .withIndex("by_recipe", (q) => q.eq("recipeId", recipe._id))
         .collect();
 
-      // Check if all ingredients are available
-      const canMake = recipeIngredients.every((ri) =>
-        availableIngredientIds.has(ri.ingredientId)
-      );
+      if (recipeIngredients.length === 0) continue;
 
-      if (canMake && recipeIngredients.length > 0) {
-        recipesYouCanMake.push(recipe);
+      let totalIngredients = recipeIngredients.length;
+      let availableCount = 0;
+      let sufficientCount = 0;
+      const missingIngredients = [];
+      const insufficientIngredients = [];
+
+      for (const recipeIngredient of recipeIngredients) {
+        const pantryQuantity = pantryMap.get(recipeIngredient.ingredientId.toString()) || 0;
+        const ingredient = await ctx.db.get(recipeIngredient.ingredientId);
+
+        if (pantryQuantity === 0) {
+          missingIngredients.push({
+            name: ingredient?.name || "Unknown",
+            needed: recipeIngredient.quantity,
+            unit: recipeIngredient.unit,
+          });
+        } else if (pantryQuantity < recipeIngredient.quantity) {
+          availableCount++;
+          insufficientIngredients.push({
+            name: ingredient?.name || "Unknown",
+            needed: recipeIngredient.quantity,
+            have: pantryQuantity,
+            unit: recipeIngredient.unit,
+          });
+        } else {
+          availableCount++;
+          sufficientCount++;
+        }
+      }
+
+      // Calculate match percentage (0-100)
+      const matchPercentage = Math.round((sufficientCount / totalIngredients) * 100);
+
+      // Only include recipes where at least some ingredients are available
+      if (availableCount > 0) {
+        recipesWithAvailability.push({
+          ...recipe,
+          matchPercentage,
+          totalIngredients,
+          sufficientCount,
+          missingIngredients,
+          insufficientIngredients,
+          canMake: sufficientCount === totalIngredients,
+        });
       }
     }
 
-    return recipesYouCanMake;
+    // Sort by match percentage (best matches first)
+    return recipesWithAvailability.sort((a, b) => b.matchPercentage - a.matchPercentage);
+  },
+});
+
+// Save AI-generated recipe to household's collection
+export const saveAIRecipe = mutation({
+  args: {
+    householdId: v.id("households"),
+    addedBy: v.optional(v.id("users")),
+    title: v.string(),
+    description: v.string(),
+    instructions: v.array(v.string()),
+    prepTime: v.optional(v.number()),
+    cookTime: v.optional(v.number()),
+    servings: v.optional(v.number()),
+    difficulty: v.optional(v.string()),
+    cuisine: v.optional(v.string()),
+    ingredients: v.array(
+      v.object({
+        name: v.string(),
+        quantity: v.number(),
+        unit: v.string(),
+        notes: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    // Create the recipe
+    const recipeId = await ctx.db.insert("recipes", {
+      householdId: args.householdId,
+      addedBy: args.addedBy,
+      title: args.title,
+      description: args.description,
+      instructions: args.instructions,
+      prepTime: args.prepTime,
+      cookTime: args.cookTime,
+      servings: args.servings,
+      difficulty: args.difficulty,
+      cuisine: args.cuisine,
+      imageUrl: undefined,
+      imageStorageId: undefined,
+      isPublic: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Add ingredients
+    for (const ing of args.ingredients) {
+      // Find or create ingredient
+      const allIngredients = await ctx.db.query("ingredients").collect();
+      let ingredientId = allIngredients.find(
+        (i) => i.name.toLowerCase() === ing.name.toLowerCase()
+      )?._id;
+
+      if (!ingredientId) {
+        // Create new ingredient
+        ingredientId = await ctx.db.insert("ingredients", {
+          name: ing.name,
+          category: "other",
+          commonUnit: ing.unit,
+          createdAt: now,
+        });
+      }
+
+      // Link ingredient to recipe
+      await ctx.db.insert("recipeIngredients", {
+        recipeId,
+        ingredientId,
+        quantity: ing.quantity,
+        unit: ing.unit,
+        notes: ing.notes,
+      });
+    }
+
+    return recipeId;
   },
 });
 

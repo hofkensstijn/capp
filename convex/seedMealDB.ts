@@ -55,7 +55,7 @@ export const importFromMealDB = action({
 
           // Create recipe
           const recipeId = await ctx.runMutation(api.recipes.create, {
-            userId: undefined, // Public recipe
+            householdId: undefined, // Public recipe
             title: recipe.strMeal,
             description: `${recipe.strCategory} - ${recipe.strArea || "International"}`,
             instructions,

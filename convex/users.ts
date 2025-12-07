@@ -44,3 +44,19 @@ export const getCurrentUser = query({
       .first();
   },
 });
+
+// Update user preferences
+export const updatePreferences = mutation({
+  args: {
+    userId: v.id("users"),
+    autoAddItems: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      preferences: {
+        autoAddItems: args.autoAddItems,
+      },
+    });
+    return args.userId;
+  },
+});

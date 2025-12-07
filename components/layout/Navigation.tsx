@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { ChefHat, Home, Package, BookOpen, ShoppingCart, Sparkles, Search } from "lucide-react";
+import { ChefHat, Home, Package, BookOpen, ShoppingCart, Sparkles, Settings } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const routes = [
   {
@@ -23,11 +24,6 @@ const routes = [
     href: "/recipes",
   },
   {
-    label: "Search",
-    icon: Search,
-    href: "/search",
-  },
-  {
     label: "Suggestions",
     icon: Sparkles,
     href: "/suggestions",
@@ -36,6 +32,11 @@ const routes = [
     label: "Shopping List",
     icon: ShoppingCart,
     href: "/shopping-list",
+  },
+  {
+    label: "Settings",
+    icon: Settings,
+    href: "/settings",
   },
 ];
 
@@ -67,6 +68,7 @@ export function Navigation() {
               </Link>
             ))}
           </div>
+          <ThemeToggle />
           <UserButton afterSignOutUrl="/" />
         </div>
       </div>
